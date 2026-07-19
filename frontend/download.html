@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>下载文件 - FileShare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>FileShare</h1>
+      <p class="subtitle">有人与你分享了文件</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <div id="file-info" class="file-detail hidden">
+          <svg class="file-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <p class="file-detail-name" id="detail-name"></p>
+          <p class="file-detail-size" id="detail-size"></p>
+        </div>
+
+        <div id="password-section" class="password-section hidden">
+          <label for="dl-password">此文件已设置密码</label>
+          <div class="password-row">
+            <input type="text" id="dl-password" placeholder="请输入访问密码">
+            <button class="btn btn-outline" id="verify-btn">验证</button>
+          </div>
+          <p class="error-msg hidden" id="password-error">密码错误</p>
+        </div>
+
+        <div id="error-section" class="error-section hidden">
+          <p class="error-msg" id="global-error"></p>
+        </div>
+
+        <button id="download-btn" class="btn btn-primary btn-full hidden">下载文件</button>
+
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>加载中...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

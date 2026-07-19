@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件传输 - FileShare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>FileShare</h1>
+      <p class="subtitle">安全、快速的文件传输</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <div id="upload-area" class="drop-zone">
+          <div class="drop-zone-content">
+            <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16V4m0 0L8 8m4-4l4 4M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/>
+            </svg>
+            <p class="drop-text">拖拽文件到此处</p>
+            <p class="drop-or">或</p>
+            <label class="btn btn-outline" for="file-input">选择文件</label>
+            <input type="file" id="file-input" hidden>
+            <p class="file-info" id="file-name"></p>
+          </div>
+        </div>
+
+        <div id="options" class="options">
+          <div class="option-row">
+            <label for="expiry">过期时间</label>
+            <select id="expiry">
+              <option value="1">1 小时</option>
+              <option value="24" selected>24 小时</option>
+              <option value="72">3 天</option>
+              <option value="168">7 天</option>
+            </select>
+          </div>
+          <div class="option-row">
+            <label for="password">访问密码（可选）</label>
+            <input type="text" id="password" placeholder="设置下载密码">
+          </div>
+        </div>
+
+        <div id="progress" class="progress hidden">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <p class="progress-text" id="progress-text">0%</p>
+        </div>
+
+        <div id="result" class="result hidden">
+          <p class="result-label">分享链接</p>
+          <div class="link-copy">
+            <input type="text" id="share-link" readonly>
+            <button class="btn btn-primary" id="copy-btn">复制</button>
+          </div>
+          <p class="copy-msg hidden" id="copy-msg">已复制到剪贴板</p>
+        </div>
+
+        <button id="upload-btn" class="btn btn-primary btn-full" disabled>上传文件</button>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

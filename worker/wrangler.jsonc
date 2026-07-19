@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "fileshare",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-07-29",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": "./static",
+    "binding": "ASSETS"
+  },
+
+  "r2_buckets": [
+    {
+      "binding": "FILE_BUCKET",
+      "bucket_name": "fileshare-bucket"
+    }
+  ],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fileshare-db",
+      "database_id": ""
+    }
+  ],
+
+  "vars": {
+    "SECRET_KEY": "change-me-to-a-random-string"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "triggers": {
+    "crons": ["0 * * * *"]
+  }
+}
