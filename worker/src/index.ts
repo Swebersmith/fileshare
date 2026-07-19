@@ -13,7 +13,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use("*", cors());
 
 // Serve frontend static files via ASSETS binding
-const STATIC_PATHS = ["/", "/download.html", "/style.css", "/app.js", "/favicon.ico"];
+const STATIC_PATHS = ["/", "/download.html", "/download", "/style.css", "/app.js", "/favicon.ico"];
 STATIC_PATHS.forEach((path) => {
   app.get(path, async (c) => {
     let assetPath = path;

@@ -92,7 +92,7 @@
           progress.classList.add("hidden");
           result.classList.remove("hidden");
           const base = window.location.origin + window.location.pathname.replace("index.html", "");
-          shareLink.value = base + "download.html?id=" + data.id;
+          shareLink.value = base + "download?id=" + data.id;
           if (data.password) {
             shareLink.value += " (密码: " + data.password + ")";
           }
