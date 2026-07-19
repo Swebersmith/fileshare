@@ -6,6 +6,7 @@ interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   SECRET_KEY: string;
+  ADMIN_PASSWORD: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -13,7 +14,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use("*", cors());
 
 // Serve frontend static files via ASSETS binding
-const STATIC_PATHS = ["/", "/download.html", "/download", "/style.css", "/app.js", "/favicon.ico"];
+const STATIC_PATHS = ["/", "/download.html", "/download", "/admin", "/admin.html", "/style.css", "/app.js", "/favicon.ico"];
 STATIC_PATHS.forEach((path) => {
   app.get(path, async (c) => {
     let assetPath = path;
@@ -194,6 +195,65 @@ app.get("/api/download/:id", async (c) => {
   headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(row.name as string)}`);
 
   return new Response(kvValue, { headers });
+});
+
+// Verify admin auth token
+async function verifyAdminToken(secret: string, token: string): Promise<boolean> {
+  const parts = token.split(":");
+  if (parts.length !== 3) return false;
+  const [expiresAtStr, hash, sigHex] = parts;
+  if (Date.now() > parseInt(expiresAtStr)) return false;
+  const payload = `${expiresAtStr}:${hash}`;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["verify"]
+  );
+  const sig = new Uint8Array(sigHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+  return crypto.subtle.verify("HMAC", key, sig, new TextEncoder().encode(payload));
+}
+
+// Admin auth middleware
+async function adminAuth(c: any, next: any) {
+  const auth = c.req.header("Authorization");
+  if (!auth || !auth.startsWith("Bearer ")) return c.json({ error: "未授权" }, 401);
+  const valid = await verifyAdminToken(c.env.SECRET_KEY, auth.slice(7));
+  if (!valid) return c.json({ error: "Token 无效或已过期" }, 401);
+  return next();
+}
+
+// POST /api/admin/login
+app.post("/api/admin/login", async (c) => {
+  const { password } = await c.req.json<{ password: string }>();
+  if (!password || password !== c.env.ADMIN_PASSWORD) {
+    return c.json({ error: "密码错误" }, 403);
+  }
+  const expiresAt = Date.now() + 60 * 60 * 1000;
+  const payload = `${expiresAt}:${await sha256(password)}`;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(c.env.SECRET_KEY),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const sigHex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return c.json({ token: `${payload}:${sigHex}` });
+});
+
+// GET /api/admin/files
+app.get("/api/admin/files", adminAuth, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    "SELECT id, name, size, type, password_hash, expires_at, created_at FROM files ORDER BY created_at DESC"
+  ).all();
+  return c.json(results);
+});
+
+// DELETE /api/admin/files/:id
+app.delete("/api/admin/files/:id", adminAuth, async (c) => {
+  const id = c.req.param("id");
+  const row = await c.env.DB.prepare("SELECT kv_key FROM files WHERE id = ?").bind(id).first();
+  if (!row) return c.json({ error: "文件不存在" }, 404);
+  await c.env.FILE_KV.delete(row.kv_key as string);
+  await c.env.DB.prepare("DELETE FROM files WHERE id = ?").bind(id).run();
+  return c.json({ ok: true });
 });
 
 // Cleanup expired files

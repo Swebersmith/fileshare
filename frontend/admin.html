@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件管理 - FileShare</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0f172a; color: #e2e8f0; min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+    header { text-align: center; margin-bottom: 32px; }
+    h1 { font-size: 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .card { background: #1e293b; border-radius: 16px; padding: 24px; border: 1px solid #334155; margin-bottom: 16px; }
+    .login-box { max-width: 360px; margin: 80px auto; }
+    .login-box label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; }
+    .login-box input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.95rem; margin-bottom: 12px; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: #6366f1; color: white; width: 100%; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-danger { background: #dc2626; color: white; padding: 6px 14px; font-size: 0.8rem; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 4px 12px; font-size: 0.8rem; background: #334155; color: #cbd5e1; border-radius: 6px; cursor: pointer; border: none; }
+    .btn-sm:hover { background: #475569; }
+    .error { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
+    .hidden { display: none !important; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #1e293b; font-size: 0.85rem; }
+    th { color: #94a3b8; font-weight: 500; }
+    td { word-break: break-all; }
+    .copy-link { color: #6366f1; cursor: pointer; font-size: 0.8rem; }
+    .copy-link:hover { text-decoration: underline; }
+    .empty { text-align: center; color: #64748b; padding: 32px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .count { color: #94a3b8; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="login-view" class="login-box card">
+      <header><h1>FileShare 管理</h1></header>
+      <label for="admin-password">管理密码</label>
+      <input type="password" id="admin-password" placeholder="请输入管理密码">
+      <button class="btn btn-primary" id="login-btn">登录</button>
+      <p class="error hidden" id="login-error"></p>
+    </div>
+
+    <div id="main-view" class="hidden">
+      <header style="display:flex;justify-content:space-between;align-items:center;">
+        <h1>文件管理</h1>
+        <button class="btn-sm" id="logout-btn">退出</button>
+      </header>
+      <div class="card">
+        <div class="header-row">
+          <span class="count" id="file-count"></span>
+          <button class="btn-sm" id="refresh-btn">刷新</button>
+        </div>
+        <div id="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>文件名</th>
+                <th>大小</th>
+                <th>过期时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="file-list"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-msg">暂无文件</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "fileshare_admin_token";
+
+      const loginView = document.getElementById("login-view");
+      const mainView = document.getElementById("main-view");
+      const loginBtn = document.getElementById("login-btn");
+      const loginError = document.getElementById("login-error");
+      const fileList = document.getElementById("file-list");
+      const fileCount = document.getElementById("file-count");
+      const emptyMsg = document.getElementById("empty-msg");
+      const adminPassword = document.getElementById("admin-password");
+
+      let token = sessionStorage.getItem(STORAGE_KEY);
+
+      if (token) { showMain(); loadFiles(); }
+      loginBtn.addEventListener("click", login);
+      adminPassword.addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+      document.getElementById("logout-btn").addEventListener("click", logout);
+      document.getElementById("refresh-btn").addEventListener("click", loadFiles);
+
+      async function login() {
+        const pw = adminPassword.value.trim();
+        if (!pw) return;
+        loginBtn.disabled = true;
+        loginError.classList.add("hidden");
+        try {
+          const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+          const d = await r.json();
+          if (d.error) { loginError.textContent = d.error; loginError.classList.remove("hidden"); }
+          else { token = d.token; sessionStorage.setItem(STORAGE_KEY, token); showMain(); loadFiles(); }
+        } catch (_) { loginError.textContent = "登录失败"; loginError.classList.remove("hidden"); }
+        loginBtn.disabled = false;
+      }
+
+      function showMain() { loginView.classList.add("hidden"); mainView.classList.remove("hidden"); }
+
+      function logout() { sessionStorage.removeItem(STORAGE_KEY); token = null; mainView.classList.add("hidden"); loginView.classList.remove("hidden"); adminPassword.value = ""; }
+
+      async function loadFiles() {
+        fileList.innerHTML = "";
+        try {
+          const r = await fetch("/api/admin/files", { headers: { "Authorization": "Bearer " + token } });
+          if (r.status === 401) { logout(); return; }
+          const files = await r.json();
+          fileCount.textContent = files.length + " 个文件";
+          if (files.length === 0) { emptyMsg.classList.remove("hidden"); return; }
+          emptyMsg.classList.add("hidden");
+          files.forEach((f) => {
+            const tr = document.createElement("tr");
+            const link = location.origin + "/download?id=" + f.id;
+            tr.innerHTML =
+              '<td>' + esc(f.name) + ' <span class="copy-link" data-link="' + esc(link) + '">复制链接</span></td>' +
+              '<td>' + formatSize(f.size) + '</td>' +
+              '<td>' + (f.expires_at ? new Date(f.expires_at).toLocaleString("zh-CN") : "永久") + '</td>' +
+              '<td><button class="btn-danger" data-id="' + f.id + '">删除</button></td>';
+            tr.querySelector(".btn-danger").addEventListener("click", () => delFile(f.id, tr));
+            tr.querySelector(".copy-link").addEventListener("click", function () { copyLink(this.dataset.link); });
+            fileList.appendChild(tr);
+          });
+        } catch (_) { fileList.innerHTML = '<tr><td colspan="4" class="empty">加载失败</td></tr>'; }
+      }
+
+      async function delFile(id, tr) {
+        if (!confirm("确定删除此文件？")) return;
+        try {
+          const r = await fetch("/api/admin/files/" + encodeURIComponent(id), { method: "DELETE", headers: { "Authorization": "Bearer " + token } });
+          if (r.status === 401) { logout(); return; }
+          if (r.ok) { tr.remove(); loadFiles(); }
+        } catch (_) {}
+      }
+
+      function copyLink(link) { navigator.clipboard?.writeText(link); alert("已复制: " + link); }
+      function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+      function formatSize(b) { if (b < 1024) return b + " B"; if (b < 1048576) return (b / 1024).toFixed(1) + " KB"; return (b / 1048576).toFixed(1) + " MB"; }
+    })();
+  </script>
+</body>
+</html>

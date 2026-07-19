@@ -26,7 +26,8 @@
   ],
 
   "vars": {
-    "SECRET_KEY": "4f158b701b97369f15c06dc210a36fa55a928a3a302b546b6d2b0062dd7dbb3e"
+    "SECRET_KEY": "4f158b701b97369f15c06dc210a36fa55a928a3a302b546b6d2b0062dd7dbb3e",
+    "ADMIN_PASSWORD": "admin123"
   },
 
   "observability": {
