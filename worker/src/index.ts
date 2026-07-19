@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 interface Env {
-  FILE_BUCKET: R2Bucket;
+  FILE_KV: KVNamespace;
   DB: D1Database;
   ASSETS: Fetcher;
   SECRET_KEY: string;
@@ -93,27 +93,26 @@ app.post("/api/upload", async (c) => {
     return c.json({ error: "未选择文件" }, 400);
   }
 
-  const maxSize = 100 * 1024 * 1024;
+  const maxSize = 25 * 1024 * 1024;
   if (file.size > maxSize) {
-    return c.json({ error: "文件大小超过 100MB 限制" }, 400);
+    return c.json({ error: "文件大小超过 25MB 限制" }, 400);
   }
 
   const fileId = generateId();
-
-  const r2Key = `${fileId}/${file.name}`;
-  await c.env.FILE_BUCKET.put(r2Key, file.stream(), {
-    httpMetadata: { contentType: file.type || "application/octet-stream" },
-  });
-
   const passwordHash = password ? await sha256(password) : "";
+
+  const kvKey = `file:${fileId}`;
+  await c.env.FILE_KV.put(kvKey, file.stream(), {
+    metadata: { name: file.name, type: file.type || "application/octet-stream" },
+  });
 
   const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
 
   await c.env.DB.prepare(
-    `INSERT INTO files (id, name, size, type, r2_key, password_hash, expires_at)
+    `INSERT INTO files (id, name, size, type, kv_key, password_hash, expires_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(fileId, file.name, file.size, file.type || "application/octet-stream", r2Key, passwordHash, expiresAt)
+    .bind(fileId, file.name, file.size, file.type || "application/octet-stream", kvKey, passwordHash, expiresAt)
     .run();
 
   return c.json({ id: fileId, password: password || undefined });
@@ -184,26 +183,27 @@ app.get("/api/download/:id", async (c) => {
     }
   }
 
-  const obj = await c.env.FILE_BUCKET.get(row.r2_key as string);
-  if (!obj) {
+  const kvValue = await c.env.FILE_KV.get(row.kv_key as string, "arrayBuffer");
+  if (!kvValue) {
     return c.json({ error: "文件数据丢失" }, 500);
   }
 
+  const contentType = (row.type as string) || "application/octet-stream";
   const headers = new Headers();
-  obj.writeHttpMetadata(headers);
+  headers.set("Content-Type", contentType);
   headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(row.name as string)}`);
 
-  return new Response(obj.body, { headers });
+  return new Response(kvValue, { headers });
 });
 
 // Cleanup expired files
 async function cleanupExpired(env: Env) {
   const rows = await env.DB.prepare(
-    "SELECT id, r2_key FROM files WHERE expires_at IS NOT NULL AND expires_at < datetime('now')"
+    "SELECT id, kv_key FROM files WHERE expires_at IS NOT NULL AND expires_at < datetime('now')"
   ).all();
 
   for (const row of rows.results) {
-    await env.FILE_BUCKET.delete(row.r2_key as string);
+    await env.FILE_KV.delete(row.kv_key as string);
     await env.DB.prepare("DELETE FROM files WHERE id = ?").bind(row.id).run();
   }
 }

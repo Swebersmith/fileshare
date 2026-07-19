@@ -10,10 +10,10 @@
     "binding": "ASSETS"
   },
 
-  "r2_buckets": [
+  "kv_namespaces": [
     {
-      "binding": "FILE_BUCKET",
-      "bucket_name": "fileshare-bucket"
+      "binding": "FILE_KV",
+      "id": "62dc8f7477714dd48f2a2bd539ec6f8c"
     }
   ],
 
@@ -21,12 +21,12 @@
     {
       "binding": "DB",
       "database_name": "fileshare-db",
-      "database_id": ""
+      "database_id": "e06b31ba-ead2-4a24-b044-850f20cbebbf"
     }
   ],
 
   "vars": {
-    "SECRET_KEY": "change-me-to-a-random-string"
+    "SECRET_KEY": "4f158b701b97369f15c06dc210a36fa55a928a3a302b546b6d2b0062dd7dbb3e"
   },
 
   "observability": {

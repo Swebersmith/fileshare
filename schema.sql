@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS files (
   name TEXT NOT NULL,
   size INTEGER NOT NULL,
   type TEXT NOT NULL DEFAULT 'application/octet-stream',
-  r2_key TEXT NOT NULL,
+  kv_key TEXT NOT NULL,
   password_hash TEXT NOT NULL DEFAULT '',
   expires_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
