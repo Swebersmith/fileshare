@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件合集 - FileShare</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .bundle-list { margin-top: 16px; }
+    .bundle-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #0f172a; border-radius: 8px; margin-bottom: 8px; }
+    .bundle-item .info { flex: 1; }
+    .bundle-item .name { font-size: 0.9rem; word-break: break-all; }
+    .bundle-item .size { color: #94a3b8; font-size: 0.8rem; margin-top: 2px; }
+    .btn-dl { background: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+    .btn-dl:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>FileShare</h1>
+      <p class="subtitle">有人与你分享了文件合集</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>加载中...</p>
+        </div>
+        <div id="bundle-content" class="hidden">
+          <div id="password-section" class="password-section hidden">
+            <label>此合集已设置密码</label>
+            <div class="password-row">
+              <input type="text" id="dl-password" placeholder="请输入访问密码">
+              <button class="btn btn-outline" id="verify-btn">验证</button>
+            </div>
+            <p class="error-msg hidden" id="password-error">密码错误</p>
+          </div>
+          <div class="bundle-list" id="bundle-list"></div>
+        </div>
+        <div id="error-section" class="error-section hidden">
+          <p class="error-msg" id="global-error"></p>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

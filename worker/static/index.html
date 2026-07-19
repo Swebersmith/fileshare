@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>文件传输 - FileShare</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .file-list { margin-top: 12px; max-height: 200px; overflow-y: auto; }
+    .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0f172a; border-radius: 6px; margin-bottom: 4px; font-size: 0.85rem; }
+    .file-item .remove-btn { color: #f87171; cursor: pointer; background: none; border: none; font-size: 1rem; padding: 0 4px; }
+    .mode-select { display: flex; gap: 16px; }
+    .mode-select label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9rem; color: #cbd5e1; }
+    .mode-select input[type="radio"] { accent-color: #6366f1; }
+    .result-list { margin-top: 12px; }
+    .result-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #0f172a; border-radius: 8px; margin-bottom: 6px; }
+    .result-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; }
+    .result-item .copy-btn { background: #334155; color: #cbd5e1; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 8px; white-space: nowrap; }
+    .result-item .copy-btn:hover { background: #475569; }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -23,14 +36,14 @@
             <p class="drop-text">拖拽文件到此处</p>
             <p class="drop-or">或</p>
             <label class="btn btn-outline" for="file-input">选择文件</label>
-            <input type="file" id="file-input" hidden>
-            <p class="file-info" id="file-name"></p>
+            <input type="file" id="file-input" hidden multiple>
+            <div class="file-list" id="file-list"></div>
           </div>
         </div>
 
         <div id="options" class="options">
           <div class="option-row">
-            <label for="expiry">过期时间</label>
+            <label>过期时间</label>
             <select id="expiry">
               <option value="1">1 小时</option>
               <option value="24" selected>24 小时</option>
@@ -42,21 +55,27 @@
             <label for="password">访问密码（可选）</label>
             <input type="text" id="password" placeholder="设置下载密码">
           </div>
+          <div class="option-row">
+            <label>链接模式</label>
+            <div class="mode-select" id="mode-select">
+              <label><input type="radio" name="mode" value="separate" checked> 每个文件单独链接</label>
+              <label><input type="radio" name="mode" value="combined"> 合并为一个链接</label>
+            </div>
+          </div>
         </div>
 
         <div id="progress" class="progress hidden">
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
-          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
           <p class="progress-text" id="progress-text">0%</p>
         </div>
 
         <div id="result" class="result hidden">
           <p class="result-label">分享链接</p>
-          <div class="link-copy">
+          <div id="single-result" class="link-copy hidden">
             <input type="text" id="share-link" readonly>
             <button class="btn btn-primary" id="copy-btn">复制</button>
           </div>
+          <div id="multi-result" class="result-list hidden"></div>
           <p class="copy-msg hidden" id="copy-msg">已复制到剪贴板</p>
         </div>
 
